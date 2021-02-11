@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.yml -o k8s
+    kompose.version: 1.21.0 (992df58d8)
+  creationTimestamp: null
+  labels:
+    name: nodejs
+  name: nodejs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: nodejs
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.yml -o k8s
+        kompose.version: 1.21.0 (992df58d8)
+      creationTimestamp: null
+      labels:
+        name: nodejs
+    spec:
+      containers:
+      - args:
+        - npm
+        - run
+        - start
+        env:
+          - name: NODE_ENV
+            value: production
+        image: cricdatabase/nodejs:2.0.0-production
+        imagePullPolicy: ""
+        name: nodejs
+        ports:
+        - containerPort: 3000
+        resources: {}
+        volumeMounts:
+        - mountPath: /opt/cric/backend/src/assets/imagens
+          name: nodejs-image
+      restartPolicy: Always
+      serviceAccountName: ""
+      volumes:
+      - name: nodejs-image
+        persistentVolumeClaim:
+          claimName: nodejs-image
+status: {}

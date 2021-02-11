@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert -f docker-compose.yml -o k8s
+    kompose.version: 1.21.0 (992df58d8)
+  creationTimestamp: null
+  labels:
+    name: angular
+  name: angular
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: angular
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert -f docker-compose.yml -o k8s
+        kompose.version: 1.21.0 (992df58d8)
+      creationTimestamp: null
+      labels:
+        name: angular
+    spec:
+      containers:
+      # Need to tell the built in development server to bind to the unspecified IP address.
+      # In IPv4 that address is 0.0.0.0.
+      # Otherwise, you will have "Connection reset by peer".
+      # And need to disbale host check otherwise will have "Invalid Host header".
+      - image: cricdatabase/angular:2.0.3-production
+        imagePullPolicy: ""
+        name: angular
+        ports:
+        - containerPort: 80
+        resources: {}
+        volumeMounts:
+        - mountPath: /etc/nginx/logs
+          name: angular-log-data
+      restartPolicy: Always
+      serviceAccountName: ""
+      volumes:
+      - name: angular-log-data
+        persistentVolumeClaim:
+          claimName: angular-log-data
+status: {}

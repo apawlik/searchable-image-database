@@ -1,10 +1,21 @@
 version: "3.7"
 services:
+  # Reverse proxy layer
+  nginx: 
+    image: nginx:latest
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - 8080:80
+
   # Web service layer
-  node:
+  nodejs:
     build:
       context: backend
+      target: development
     command: nodemon ./src/server.js
+    environment:
+      DEBUG: "database.cric:*"
     ports:
       - "3000:3000"
     volumes:
@@ -14,23 +25,32 @@ services:
 
   # Data persistence service layer
   db:
-    image: mysql:5.7.20
+    image: mysql:8.0
     volumes:
       - "db_data:/var/lib/mysql"
     ports:
       - "3306:3306"
-    environment:
-      - MYSQL_ROOT_PASSWORD=123.456
-      - MYSQL_DATABASE=cric
+    env_file:
+      - ./mysql.dev.env
+      - ./mysql.prod.env
 
   # Application service layer
   angular:
     build:
       context: frontend
-    # Need to tell the built in development server to bind to the unspecified IP address
-    command: ng serve --host 0.0.0.0 --port 4200
+      target: development
+    # Need to tell the built in development server to bind to the unspecified IP address.
+    # In IPv4 that address is 0.0.0.0.
+    # Otherwise, you will have "Connection reset by peer"
+    command: npm run start-dev
+    environment:
+      # Development values
+      CRIC_DOMAIN: "http://localhost:8080"
+      CRIC_API_DOMAIN: "http://localhost:8080"
+      CRIC_EMAIL: "cric@ufop.edu.br"
+      CRIC_PLAYGROUND: "false"
     ports:
-      - "8080:4200"
+      - "4200:4200"
     volumes:
       - "./frontend:/opt/cric/frontend"
       #  Anonymous volume to avoid overwritten by the mounting of the host directory at runtime.
